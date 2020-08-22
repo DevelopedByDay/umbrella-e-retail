@@ -9,14 +9,17 @@ router.get('/', (req, res) => {
   // find all products
   // be sure to include its associated Category and Tag data
   Product.findAll({
-    include: [
+    include: [ 
       {
         model: Category,
-        attributes: ['category_id']
+        attributes: ['id']
       },
       {
         model: Tag,
-        attributes: ['tag_id']
+        attributes: ['id'],
+        through: ProductTag,
+        as: 'product_tag_id'
+        
       }
     ]
   })
@@ -38,11 +41,13 @@ router.get('/:id', (req, res) => {
     include: [
       {
         model: Category,
-        attributes: ['category_id']
+        attributes: ['id']
       },
       {
         model: Tag,
-        attributes: ['tag_id']
+        attributes: ['id'],
+        through: ProductTag,
+        as: 'product_tag_id'
       }
     ]
   })
@@ -61,7 +66,7 @@ router.get('/:id', (req, res) => {
 
 // create new product
 router.post('/', (req, res) => {
-  Product.create({
+  Product.create(req.body, {
     product_name: req.body.product_name,
     price: req.body.price,
     stock: req.body.stock,
@@ -95,12 +100,12 @@ router.put('/:id', (req, res) => {
     where: {
       id: req.params.id,
     },
-  },
-  {
-    product_name: req.body.product_name,
-    price: req.body.price,
-    stock: req.body.stock,
-    tagIds: [req.body.tag_id]
+  // },
+  // {
+  //   product_name: req.body.product_name,
+  //   price: req.body.price,
+  //   stock: req.body.stock,
+  //   tagIds: [req.body.tag_id]
   })
     .then((product) => {
       // find all associated tags from ProductTag
@@ -126,12 +131,13 @@ router.put('/:id', (req, res) => {
       // run both actions
       return Promise.all([
         ProductTag.destroy({ where: { id: productTagsToRemove } }),
-        ProductTag.bulkCreate(newProductTags),
+        ProductTag.bulkCreate(newProductTags)
+        ,
       ]);
     })
     .then((updatedProductTags) => res.json(updatedProductTags))
     .catch((err) => {
-      // console.log(err);
+      console.log(err);
       res.status(400).json(err);
     });
 });
